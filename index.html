@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Monster Sim: South Island</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700&family=Chakra+Petch:wght@600;700&family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#06121c;--panel:#0b1f2e;--ink:#e6f3ff;--muted:#8db0c6;--line:#1d4a66;--sea:#0b2b44;--land:#2c4732;--mount:#57574a;--res:#4f8a5c;--cbd:#7fd3ff;--ind:#a5884f;--port:#45b6cf;--rubble:#3a2620;--fire:#ff6a2a;--alert:#ff4f6d;--safe:#3ff0c0;color-scheme:dark;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box}
+body{margin:0;color:var(--ink);font:15px/1.5 "IBM Plex Sans",system-ui,sans-serif;background:radial-gradient(1200px 600px at 50% -10%,#123a57 0%,var(--bg) 60%);background-color:var(--bg)}
+main{max-width:1100px;margin:0 auto;padding:18px 16px 40px}
+.hero{position:relative;border-radius:8px;overflow:hidden;margin-bottom:18px;aspect-ratio:16/8;background:#0b2a3a;box-shadow:0 0 40px rgba(60,170,255,.25)}
+.hero img{width:100%;height:100%;object-fit:cover;object-position:center 45%;display:block}
+.hero div{position:absolute;inset:auto 0 0 0;padding:40px 18px 14px;background:linear-gradient(transparent,rgba(5,20,30,.85));color:#fff}
+.hero .sub{color:#d6e3e6;margin:0}
+h1,h2,.clock,.stat b,.mons button,.cities b,.run button{font-family:"Chakra Petch","Barlow Condensed",sans-serif}
+h1{font-weight:700;font-size:clamp(2rem,6vw,3.4rem);line-height:1;margin:0 0 4px}
+.sub{color:var(--muted);margin:0 0 18px;max-width:60ch}
+.grid{display:grid;grid-template-columns:340px 1fr;gap:18px}
+@media(max-width:820px){.grid{grid-template-columns:1fr}}
+.panel{background:linear-gradient(180deg,#0e2638,#0a1b29);border:1px solid var(--line);border-radius:6px;padding:14px;box-shadow:0 0 0 1px #0a2a3f,0 0 24px rgba(70,180,255,.12) inset}
+h2{font-weight:700;font-size:1.3rem;line-height:1.1;margin:0 0 8px}
+.cities{display:grid;gap:8px;margin-bottom:12px}
+.cities button{display:flex;align-items:center;gap:12px;text-align:left;font:inherit;border:2px solid var(--line);background:#0a1d2b;color:var(--ink);border-radius:6px;padding:8px 12px;cursor:pointer}
+.cities .ic{font-size:1.8rem;line-height:1}
+.cities b{display:block;font-weight:700;font-size:1.25rem;line-height:1.1}
+.cities small{color:var(--muted);font-size:13px}
+.mons{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+.mons button{font-weight:700;font-size:1rem;border:2px solid var(--line);background:#0a1d2b;color:var(--ink);border-radius:6px;padding:8px 4px 6px;cursor:pointer}
+.mons button[aria-pressed="true"],.cities button[aria-pressed="true"]{border-color:var(--alert);background:rgba(255,79,109,.12);box-shadow:0 0 14px rgba(255,79,109,.45)}
+.mons canvas{width:52px;height:52px;image-rendering:pixelated;display:block;margin:0 auto 4px;border:0;background:none;box-shadow:none;filter:drop-shadow(0 0 6px rgba(255,255,255,.25))}
+button:focus-visible,input:focus-visible{outline:2px solid var(--alert);outline-offset:2px}
+dl{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;margin:0 0 14px;font-size:13.5px}
+dt{color:var(--muted)} dd{margin:0;text-align:right;font-variant-numeric:tabular-nums}
+.note{font-size:13px;color:var(--muted);margin:0 0 14px}
+label{display:block;font-size:14px;margin:6px 0 2px}
+input[type=range]{width:100%;accent-color:var(--alert)}
+.run{display:flex;gap:8px;margin-top:10px}
+.run button{flex:1;font-weight:700;font-size:1.1rem;padding:9px;border-radius:4px;border:1px solid var(--alert);background:var(--alert);color:#fff;cursor:pointer;box-shadow:0 0 16px rgba(255,79,109,.5)}
+.run button.ghost{background:transparent;color:var(--ink);border-color:var(--line);box-shadow:none}
+.stage{position:relative}
+canvas#cv{width:100%;display:block;border-radius:4px;border:1px solid #2a6a90;background:var(--sea);box-shadow:0 0 30px rgba(60,170,255,.25)}
+.clock{position:absolute;top:10px;left:12px;font-weight:700;font-size:1.5rem;background:rgba(6,18,28,.8);padding:2px 10px;border-radius:4px;border:1px solid #2a6a90;color:var(--safe);text-shadow:0 0 8px rgba(63,240,192,.6)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px}
+@media(max-width:560px){.stats{grid-template-columns:repeat(2,1fr)}}
+.stat{background:#0a1d2b;border:1px solid var(--line);border-radius:6px;padding:8px 10px}
+.stat b{display:block;font-weight:700;font-size:1.8rem;line-height:1;font-variant-numeric:tabular-nums}
+.stat span{font-size:13px;color:var(--muted)}
+.stat.bad b{color:var(--alert);text-shadow:0 0 10px rgba(255,79,109,.5)} .stat.good b{color:var(--safe);text-shadow:0 0 10px rgba(63,240,192,.5)}
+.bar{height:8px;background:var(--line);border-radius:4px;overflow:hidden;margin-top:12px;display:flex}
+.bar i{display:block;height:100%}
+#log{font-size:13.5px;margin-top:12px;min-height:3em}
+.legend{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12.5px;color:var(--muted);margin-top:8px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+</style>
+</head>
+<body>
+<main>
+  <header class="hero"><img alt="Illustrated South Island overrun by giant monsters" src="portada.jpg" onerror="this.remove()"><div><h1>Monster sim: South Island</h1>
+  <p class="sub">Pick a real city and a monster, set how much warning people get, and watch what falls first and how many get out.</p></div></header>
+  <div class="grid">
+    <section class="panel">
+      <h2>City</h2>
+      <div class="cities" id="cityPick" role="group" aria-label="Choose a city"></div>
+      <dl id="cityData"></dl>
+      <p class="note" id="cityNote"></p>
+      <h2>Monster</h2>
+      <div class="mons" id="monPick"></div>
+      <dl id="monData"></dl>
+      <p class="note" id="monNote"></p>
+      <label for="warn">Warning before landfall: <b id="warnVal"></b></label>
+      <input id="warn" type="range" min="0" max="90" step="5" value="20">
+      <label for="speed">Sim speed: <b id="speedVal"></b></label>
+      <input id="speed" type="range" min="1" max="10" value="4">
+      <div class="run"><button id="go">Start</button><button id="reset" class="ghost">Reset</button><button id="mute" class="ghost" aria-pressed="false" aria-label="Mute sound">🔊</button></div>
+    </section>
+    <section>
+      <div class="stage"><canvas id="cv"></canvas><div class="clock" id="clock">T−20 min</div></div>
+      <div class="legend">
+        <span><i style="background:var(--cbd)"></i>City centre</span><span><i style="background:var(--res)"></i>Homes</span>
+        <span><i style="background:var(--ind)"></i>Industrial</span><span><i style="background:var(--port)"></i>Port</span>
+        <span><i style="background:var(--rubble)"></i>Destroyed</span><span><i style="background:var(--fire)"></i>Burning</span><span><i style="background:#2f7fc4"></i>Flooded</span>
+      </div>
+      <div class="stats">
+        <div class="stat"><b id="sLost">0%</b><span>buildings destroyed</span></div>
+        <div class="stat good"><b id="sOut">0</b><span>evacuated</span></div>
+        <div class="stat"><b id="sIn">0</b><span>still in the city</span></div>
+        <div class="stat bad"><b id="sCaught">0</b><span>caught in destroyed areas</span></div>
+      </div>
+      <div class="bar" aria-hidden="true"><i id="bOut" style="background:var(--safe)"></i><i id="bIn" style="background:var(--muted)"></i><i id="bCaught" style="background:var(--alert)"></i></div>
+      <div id="log"></div>
+    </section>
+  </div>
+</main>
+<script>
+const W=64,H=44;
+const CITIES={
+  christchurch:{name:"Christchurch",pop:391000,area:"Flat coastal plain",coast:"east",spread:.40,cbd:[.58,.48],res:1.35,routes:1.0,hills:0,
+    note:"Rebuilt to tough seismic codes after 2011, so its centre resists damage best. Flat, with many roads out."},
+  dunedin:{name:"Dunedin",pop:128000,area:"Harbour, steep hills",coast:"harbour",spread:.30,cbd:[.50,.52],res:1.0,routes:.75,hills:.5,
+    note:"Packed around the head of a long harbour. Steep hills slow evacuation and older brick buildings fall faster."},
+  queenstown:{name:"Queenstown",pop:16000,area:"Lakeshore, mountains",coast:"lake",spread:.20,cbd:[.50,.55],res:1.1,routes:.45,hills:.8,
+    note:"Small and compact, boxed in by lake and mountains. Very few roads out, so even a small crowd jams up."}
+};
+const MONS={
+  brackmaw:{name:"Brackmaw",kind:"Sea crustacean",height:"60 m",speed:.55,radius:1.6,power:3.2,fire:0,from:"water",likes:{port:3,ind:1.5,cbd:1.2,res:.6},
+    note:"Crawls out of the water and goes for ports and anything near the shore first."},
+  scree:{name:"Scree Titan",kind:"Rock colossus",height:"110 m",speed:.3,radius:2.4,power:6.5,fire:0,from:"land",likes:{cbd:3,ind:1,port:1,res:.5},
+    note:"Slow but nearly unstoppable. Comes down from the high ground and heads straight for the tallest buildings."},
+  ashwing:{name:"Ashwing",kind:"Fire-breathing flyer",height:"35 m wingspan",speed:1.5,radius:.9,power:1.2,fire:1,from:"air",likes:{res:2,cbd:1,ind:1,port:.5},
+    note:"Fast and erratic. Does little direct damage, but its fires spread through dense housing."},
+  abismo:{name:"Abismo",kind:"Deep-sea leviathan",height:"140 m long",speed:.45,radius:1.8,power:4,fire:0,flood:1,from:"water",likes:{port:2.5,res:1.5,cbd:1,ind:1},note:"Rises from the deep and pushes surges inland. Coastal neighbourhoods flood first, then it follows the water in."}
+};
+const FR={};
+function mk(k,f){const c=document.createElement("canvas");c.width=c.height=24;const x=c.getContext("2d");const r=(col,X,Y,w,h)=>{x.fillStyle=col;x.fillRect(X,Y,w,h)};
+ if(k==="brackmaw"){const B="#d4553a",L="#f08a6a",D="#9c3424",u=f?-1:0;
+  for(let i=0;i<3;i++){const o=(i+f)%2;r(D,4+i*2,16+o,1,4-o);r(D,19-i*2,16+(1-o),1,4-(1-o))}
+  r(B,7,10,10,1);r(B,5,11,14,7);r(B,7,18,10,1);r(L,8,11,7,1);r(D,6,16,12,1);
+  r(B,8,7,1,3);r(B,15,7,1,3);r("#fff",7,5,2,2);r("#fff",14,5,2,2);r("#111",8,6,1,1);r("#111",15,6,1,1);
+  r(B,4,10,2,2);r(B,18,10,2,2);r(B,1,6+u,4,4);r(B,19,6+u,4,4);r(L,1,6+u,2,1);r(L,21,6+u,2,1);
+  x.clearRect(2,5+u,1,3);x.clearRect(21,5+u,1,3);}
+ if(k==="scree"){const G="#8d8a7f",L="#b4b0a2",D="#5c594f",O="#ff8a2a",a=f?1:-1;
+  r(G,9,2,6,5);r(L,9,2,6,1);r("#ffe14a",10,4,1,1);r("#ffe14a",13,4,1,1);
+  r(G,3,7,4,4);r(G,17,7,4,4);r(L,3,7,4,1);r(L,17,7,4,1);r(G,6,7,12,8);r(D,6,13,12,2);
+  r(O,9,9,1,3);r(O,10,11,2,1);r(O,14,8,1,2);r(G,3,11+a,3,6);r(G,18,11-a,3,6);r(D,3,16+a,3,1);r(D,18,16-a,3,1);
+  r(G,8,15,3,f?7:6);r(G,13,15,3,f?6:7);r(D,7,21+(f?0:-1),4,1);r(D,13,21+(f?-1:0),4,1);}
+ if(k==="ashwing"){const P="#7b4bb3",L="#a77ae0",O="#f08a2c",F="#ffcf3a";
+  for(let i=0;i<9;i++){const y=f?6+i:2+i,h=f?Math.max(1,6-i/2|0):Math.max(1,9-i);r(P,9-i,y,1,h);r(P,14+i,y,1,h);r(O,9-i,y,1,1);r(O,14+i,y,1,1)}
+  r(P,10,8,4,9);r(L,11,10,2,6);r(P,10,4,4,4);r(O,10,3,1,1);r(O,13,3,1,1);r(F,10,5,1,1);r(F,13,5,1,1);
+  r(P,11,17,2,3);r("#ff5a1f",11,20,2,2);r(F,11,20+f,1,1);r(F,12,22-f,1,1);}
+ if(k==="abismo"){const B="#1d4f6a",L="#3f87a8",G=f?"#6ff3ff":"#38c6e0",y=f?1:0;
+  r(B,2,17,8,4);r(B,13,18,9,4);r(L,3,17,6,1);r(L,14,18,7,1);r(B,21,15,2,4);
+  r(B,8,10,4,9);r(B,10,7,4,4);r(L,9,11,1,6);r(L,6,8,2,3);r(L,7,13,1,3);
+  r(B,9,2+y,10,5);r(L,10,2+y,8,1);r(B,13,7+y,6,2);r(G,16,4+y,2,1);r("#fff",13,7+y,1,1);r("#fff",16,7+y,1,1);
+  for(const[a,b]of[[4,19],[7,18],[15,20],[19,19],[10,14],[11,12],[12,9],[11,4+y]])r(G,a,b,1,1);}
+ const im=x.getImageData(0,0,24,24),d=im.data,o=new Uint8ClampedArray(d);
+ for(let y=0;y<24;y++)for(let X=0;X<24;X++){const i=(y*24+X)*4;if(d[i+3])continue;
+  for(const[p,q]of[[1,0],[-1,0],[0,1],[0,-1]]){const xx=X+p,yy=y+q;if(xx>=0&&yy>=0&&xx<24&&yy<24&&d[((yy*24+xx)*4)+3]){o[i]=20;o[i+1]=10;o[i+2]=16;o[i+3]=255;break}}}
+ x.putImageData(new ImageData(o,24,24),0,0);return c}
+function sprite(x,k,X,Y,s,f){if(f===undefined)f=Math.floor(performance.now()/260)%2;const key=k+f;FR[key]=FR[key]||mk(k,f);
+ x.imageSmoothingEnabled=false;x.drawImage(FR[key],X,Y,12*s,12*s)}
+setInterval(()=>document.querySelectorAll("canvas[data-s]").forEach(c=>{const x=c.getContext("2d");x.clearRect(0,0,48,48);sprite(x,c.dataset.s,0,0,4)}),260);
+let AC=null,NB=null,muted=false,amb=null,lastCrash=0;
+function ac(){if(!AC)AC=new(window.AudioContext||window.webkitAudioContext)();if(AC.state==="suspended")AC.resume();if(!NB){const b=AC.createBuffer(1,AC.sampleRate*2,AC.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;NB=b}}
+function sfx(type){if(muted||!AC)return;const a=AC,t0=a.currentTime,g=a.createGain();g.connect(a.destination);
+ if(type==="siren"){const o=a.createOscillator(),f=a.createBiquadFilter();o.type="sawtooth";f.type="lowpass";f.frequency.value=1800;o.connect(f);f.connect(g);g.gain.setValueAtTime(0,t0);g.gain.linearRampToValueAtTime(.07,t0+.2);for(let i=0;i<4;i++){o.frequency.setValueAtTime(500,t0+i);o.frequency.linearRampToValueAtTime(900,t0+i+.5);o.frequency.linearRampToValueAtTime(500,t0+i+1)}g.gain.linearRampToValueAtTime(0,t0+4);o.start(t0);o.stop(t0+4.1)}
+ if(type==="roar"){const base={brackmaw:180,scree:60,ashwing:420,abismo:45}[mon],o=a.createOscillator(),o2=a.createOscillator(),n=a.createBufferSource(),nf=a.createBiquadFilter(),f=a.createBiquadFilter();o.type="sawtooth";o2.type="square";for(const[x,k]of[[o,1],[o2,1.03]]){x.frequency.setValueAtTime(base*1.4*k,t0);x.frequency.exponentialRampToValueAtTime(base*.6*k,t0+2.2);x.connect(f)}n.buffer=NB;nf.type="bandpass";nf.frequency.value=base*3;f.type="lowpass";f.frequency.value=base*8;n.connect(nf);nf.connect(f);f.connect(g);g.gain.setValueAtTime(0,t0);g.gain.linearRampToValueAtTime(.25,t0+.15);g.gain.exponentialRampToValueAtTime(.001,t0+2.4);[o,o2,n].forEach(x=>{x.start(t0);x.stop(t0+2.5)})}
+ if(type==="crash"){const n=a.createBufferSource(),f=a.createBiquadFilter(),o=a.createOscillator(),g2=a.createGain();n.buffer=NB;n.playbackRate.value=.5+Math.random()*.4;f.type="lowpass";f.frequency.value=600+Math.random()*600;n.connect(f);f.connect(g);g.gain.setValueAtTime(.16,t0);g.gain.exponentialRampToValueAtTime(.001,t0+.6);n.start(t0);n.stop(t0+.7);o.frequency.setValueAtTime(90,t0);o.frequency.exponentialRampToValueAtTime(35,t0+.4);g2.gain.setValueAtTime(.22,t0);g2.gain.exponentialRampToValueAtTime(.001,t0+.45);o.connect(g2);g2.connect(a.destination);o.start(t0);o.stop(t0+.5)}}
+function ambient(on){if(amb){amb.g.gain.setTargetAtTime(0,AC.currentTime,.3);const s=amb.n;setTimeout(()=>{try{s.stop()}catch(e){}},1500);amb=null}if(!on||muted||!AC)return;const a=AC,m=MONS[mon],n=a.createBufferSource(),f=a.createBiquadFilter(),g=a.createGain();n.buffer=NB;n.loop=true;
+ if(m.fire){f.type="highpass";f.frequency.value=2500}else if(m.flood){f.type="lowpass";f.frequency.value=500;const l=a.createOscillator(),lg=a.createGain();l.frequency.value=.15;lg.gain.value=.05;l.connect(lg);lg.connect(g.gain);l.start()}else{f.type="lowpass";f.frequency.value=180}
+ n.connect(f);f.connect(g);g.connect(a.destination);g.gain.value=0;g.gain.setTargetAtTime(m.fire?.04:.08,a.currentTime,.5);n.start();amb={n,g}}
+let shake=0,parts=[];
+let city="christchurch",mon="brackmaw",grid,M,t,running=false,raf,acc=0,last=0,out,caught,initial,alerted,log=[];
+const $=id=>document.getElementById(id);
+const fmt=n=>Math.round(n).toLocaleString("en-NZ");
+function rng(s){return()=>{s|=0;s=s+0x6D2B79F5|0;let t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function isWater(c,x,y,r){
+  const u=x/W,v=y/H;
+  if(c.coast==="east") return u>.80+Math.sin(v*7)*.03+ (r()*.02);
+  if(c.coast==="harbour"){const d=(u-.52)*.8-(v-.5)*.6; return (u>.48&&v<.52&&Math.abs(d)<.07+ (u-.48)*.25)||u+(.5-v)*.3>1.05||(u>.9);}
+  if(c.coast==="lake") return v>.62+Math.sin(u*9)*.03 && !(u>.42&&u<.5&&v<.7);
+}
+function build(){
+  const c=CITIES[city],r=rng(city.length*977+7);grid=[];let wsum=0;
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){
+    const g={x,y,type:"land",hp:0,max:0,pop:0,burn:0,dead:false};
+    if(isWater(c,x,y,r)) g.type="water";
+    else{
+      const dx=(x/W-c.cbd[0])*1.3,dy=y/H-c.cbd[1],d=Math.hypot(dx,dy);
+      const hill=c.hills*( (c.coast==="lake"? (1-y/H)*1.2 : (y/H<.3? .9:0)+(x/W<.15?.8:0)) );
+      if(r()<hill*.55+(d>c.spread*1.25?.6:0)) g.type=hill>.3?"mount":"land";
+      else{
+        const p=Math.exp(-((d/c.spread)**2))+r()*.25-.15;
+        if(p>.25){
+          if(d<c.spread*.22) g.type="cbd";
+          else{
+            let nearW=false;for(let k=1;k<=2;k++)for(const[a,b]of[[k,0],[-k,0],[0,k],[0,-k]]){const xx=x+a,yy=y+b;if(xx>=0&&yy>=0&&xx<W&&yy<H&&isWater(c,xx,yy,()=>.5))nearW=true}
+            g.type=nearW&&d<c.spread*.7&&r()<.6?"port":(r()<.12?"ind":"res");
+          }
+          const dens=g.type==="cbd"?2.2:g.type==="res"?Math.max(.3,p):g.type==="port"?.4:.3;
+          g.pop=dens;wsum+=dens;
+          g.max=g.hp=100*c.res*(g.type==="cbd"?1.5:g.type==="res"?.8:1);
+        }
+      }
+    }
+    grid.push(g);
+  }
+  grid.forEach(g=>{if(g.pop)g.pop=g.pop/wsum*c.pop});
+  initial=c.pop;out=0;caught=0;
+}
+function dev(g){return g.max>0}
+function spawn(){
+  const m=MONS[mon],c=CITIES[city];let x,y;
+  if(m.from==="water"){const w=grid.filter(g=>g.type==="water");const cx=c.cbd[0]*W,cy=c.cbd[1]*H;w.sort((a,b)=>Math.hypot(a.x-cx,a.y-cy)-Math.hypot(b.x-cx,b.y-cy));const g=w[Math.min(w.length-1,40)];x=g.x;y=g.y}
+  else if(m.from==="land"){ if(c.coast==="lake"){x=W*.5;y=0}else if(c.coast==="east"){x=0;y=H*.5}else{x=W*.05;y=H*.2} }
+  else {x=W-1;y=0}
+  M={x,y,tx:null,ty:null,t:null};
+}
+function pickTarget(){
+  const m=MONS[mon];let best=null,bs=-1;
+  for(const g of grid){ if(!dev(g)||g.dead)continue;
+    const s=(m.likes[g.type]||.5)*(g.pop/1000+1)/(1+Math.hypot(g.x-M.x,g.y-M.y)*.15)*(m.fire?(.5+Math.random()):1);
+    if(s>bs){bs=s;best=g}}
+  if(best){M.tx=best.x;M.ty=best.y}
+}
+function at(x,y){return x<0||y<0||x>=W||y>=H?null:grid[y*W+x]}
+function kill(g){ if(g.dead)return; g.dead=true;if(AC&&AC.currentTime-lastCrash>.25){lastCrash=AC.currentTime;sfx("crash")}shake=Math.min(8,shake+2);for(let i=0;i<5;i++)parts.push({x:g.x+.5,y:g.y+.5,vx:(Math.random()-.5)*.6,vy:-Math.random()*.6,l:1,c:Math.random()<.5?"#ff8a3a":"#9a8a7a"});g.burn=0; if(g.pop>0){caught+=g.pop;g.pop=0}
+  if(g.type==="cbd"&&!log.cbd){log.cbd=1;note("The city centre is taking heavy damage.")}
+  if(g.type==="port"&&!log.port){log.port=1;note("The port is the first thing hit.")}}
+function note(s){log.push(`T+${Math.max(0,Math.round(t))} min: ${s}`);$("log").innerHTML=log.slice(-3).map(l=>`<div>${l}</div>`).join("")}
+function step(){
+  const c=CITIES[city],m=MONS[mon];t+=1;
+  const rate=.018*c.routes;
+  if(t>=-+$("warn").value){
+    if(!alerted){alerted=1;sfx("siren");note("Evacuation alert issued.")}
+    for(const g of grid){ if(g.pop>0&&!g.dead){const near=M&&t>0?Math.hypot(g.x-M.x,g.y-M.y):99;const r=rate*(near<6?1.6:1)/(1+(g.type==="cbd"?.6:0));const e=g.pop*r;g.pop-=e;out+=e}}
+  }
+  if(t<0)return;
+  if(t===0){spawn();sfx("roar");ambient(true);note(`${m.name} makes landfall.`)}
+  if(M.tx===null||Math.hypot(M.tx-M.x,M.ty-M.y)<.8||at(M.tx,M.ty).dead) pickTarget();
+  if(M.tx!==null){const dx=M.tx-M.x,dy=M.ty-M.y,d=Math.hypot(dx,dy)||1;const s=Math.min(d,m.speed);M.x+=dx/d*s;M.y+=dy/d*s}
+  const R=Math.ceil(m.radius);
+  for(let a=-R;a<=R;a++)for(let b=-R;b<=R;b++){const g=at(Math.round(M.x)+a,Math.round(M.y)+b);if(!g||!dev(g)||g.dead)continue;
+    const f=1-Math.hypot(a,b)/(m.radius+1);if(f<=0)continue;
+    g.hp-=m.power*12*f;if(m.fire&&Math.random()<.35*f)g.burn=1;if(g.hp<=0)kill(g)}
+  if(m.flood&&t%2===0){const wv=t<120?.12:.03;for(const g of grid){if(!dev(g)||g.dead||g.wet)continue;for(const[a,b]of[[1,0],[-1,0],[0,1],[0,-1]]){const n=at(g.x+a,g.y+b);if(n&&(n.type==="water"||n.wet)&&Math.random()<wv/c.res){g.wet=1;break}}}for(const g of grid)if(g.wet&&!g.dead){g.hp-=2.5;if(g.hp<=0)kill(g)}if(!log.flood&&grid.some(g=>g.wet)){log.flood=1;note("Storm surge is flooding the coast.")}}
+  for(const g of grid){ if(!g.burn||g.dead)continue; g.hp-=5/c.res; if(g.hp<=0){kill(g);continue}
+    for(const[a,b]of[[1,0],[-1,0],[0,1],[0,-1]]){const n=at(g.x+a,g.y+b);if(n&&dev(n)&&!n.dead&&!n.burn&&Math.random()<(n.type==="res"?.05:.025)/c.res)n.burn=1}
+    if(Math.random()<.01*c.routes)g.burn=0;}
+  const lost=lostPct();
+  if(t>=240||lost>=.85){running=false;ambient(false);$("go").textContent="Start";note(t>=240?"Defence forces drive the monster off after 4 hours.":"The city is effectively gone.");}
+}
+function lostPct(){let n=0,d=0;for(const g of grid)if(dev(g)){n++;if(g.dead)d++}return d/n}
+function color(g,cs){
+  if(g.dead)return cs.rubble; if(g.burn)return cs.fire; if(g.wet)return "#2f7fc4";
+  return {water:cs.sea,land:cs.land,mount:cs.mount,res:cs.res,cbd:cs.cbd,ind:cs.ind,port:cs.port}[g.type];
+}
+function draw(){
+  const cv=$("cv"),w=cv.clientWidth,dpr=devicePixelRatio||1,cell=w/W;
+  cv.width=w*dpr;cv.height=cell*H*dpr;cv.style.height=cell*H+"px";
+  const x=cv.getContext("2d");x.scale(dpr,dpr);if(running&&shake>.2){x.translate((Math.random()-.5)*shake,(Math.random()-.5)*shake);shake*=.85}
+  const st=getComputedStyle(document.documentElement),cs={};
+  for(const k of["sea","land","mount","res","cbd","ind","port","rubble","fire","alert","ink"])cs[k]=st.getPropertyValue("--"+k).trim();
+  for(const g of grid){x.fillStyle=color(g,cs);x.globalAlpha=dev(g)&&!g.dead&&!g.burn?.35+.65*Math.min(1,g.pop/(initial/ (W*H*.15))+.15):1;
+    x.fillRect(g.x*cell,g.y*cell,cell+.5,cell+.5);
+    if(dev(g)&&!g.dead&&g.type!=="res"){x.globalAlpha=.25;x.fillStyle="#000";x.fillRect(g.x*cell,(g.y+.7)*cell,cell,cell*.3);x.fillStyle="#fff";x.fillRect((g.x+.2)*cell,(g.y+.2)*cell,cell*.25,cell*.25)}
+    if(g.burn&&!g.dead){x.globalAlpha=1;x.fillStyle="#ffd34a";x.fillRect((g.x+.35)*cell,(g.y+.35)*cell,cell*.3,cell*.3)}}
+  x.globalAlpha=1;
+  x.strokeStyle="rgba(120,200,255,.10)";x.lineWidth=1;for(let i=0;i<=W;i+=4){x.beginPath();x.moveTo(i*cell,0);x.lineTo(i*cell,H*cell);x.stroke()}for(let j=0;j<=H;j+=4){x.beginPath();x.moveTo(0,j*cell);x.lineTo(W*cell,j*cell);x.stroke()}
+  for(const g of grid){if(!dev(g)||g.dead)continue;if((g.type==="cbd"||g.type==="res")&&(g.x*7+g.y*13)%(g.type==="cbd"?2:4)===0){x.fillStyle=g.type==="cbd"?"rgba(255,230,140,.95)":"rgba(255,220,120,.7)";x.shadowColor="#ffd36a";x.shadowBlur=6;x.fillRect((g.x+.4)*cell,(g.y+.4)*cell,cell*.2,cell*.2)}}
+  x.shadowBlur=0;
+  parts=parts.filter(p=>p.l>0);for(const p of parts){x.globalAlpha=p.l;x.fillStyle=p.c;x.fillRect(p.x*cell,p.y*cell,cell*.3,cell*.3);p.x+=p.vx;p.y+=p.vy;p.vy+=.03;p.l-=.04}x.globalAlpha=1;
+  if(M&&t>=0){const m=MONS[mon],px=(M.x+.5)*cell,py=(M.y+.5)*cell;
+    x.strokeStyle=cs.alert;x.lineWidth=2;x.beginPath();x.arc(px,py,(m.radius+1)*cell,0,7);x.stroke();
+    const ps=Math.max(3,cell*.7);x.fillStyle="rgba(0,0,0,.45)";x.beginPath();x.ellipse(px,py+6*ps,5*ps,1.6*ps,0,0,7);x.fill();
+    x.shadowColor=cs.alert;x.shadowBlur=18+Math.sin(performance.now()/150)*8;sprite(x,mon,px-6*ps,py-6*ps,ps,running?undefined:0);x.shadowBlur=0;
+    x.font="700 14px 'Chakra Petch',sans-serif";const tw=x.measureText(m.name).width;x.fillStyle="rgba(6,18,28,.85)";x.fillRect(px+7*ps,py-7*ps-14,tw+12,20);x.strokeStyle=cs.alert;x.strokeRect(px+7*ps,py-7*ps-14,tw+12,20);x.fillStyle="#fff";x.fillText(m.name,px+7*ps+6,py-7*ps+1)}
+  const inCity=Math.max(0,initial-out-caught);
+  $("clock").textContent=t<0?`T−${-t} min`:`T+${t} min`;
+  $("sLost").textContent=Math.round(lostPct()*100)+"%";$("sOut").textContent=fmt(out);$("sIn").textContent=fmt(inCity);$("sCaught").textContent=fmt(caught);
+  $("bOut").style.width=out/initial*100+"%";$("bIn").style.width=inCity/initial*100+"%";$("bCaught").style.width=caught/initial*100+"%";
+}
+function loop(ts){ if(!running)return; const sp=+$("speed").value; acc+=(ts-last)/1000*sp*3; last=ts;
+  while(acc>=1&&running){acc--;step()} draw(); raf=requestAnimationFrame(loop)}
+function reset(){running=false;ambient(false);cancelAnimationFrame(raf);t=-(+$("warn").value)-1;M=null;alerted=0;log=[];$("log").innerHTML="";build();t++;draw();$("go").textContent="Start"}
+function ui(){
+  const c=CITIES[city],m=MONS[mon];
+  const IC={christchurch:"🏙️",dunedin:"⚓",queenstown:"🏔️"};
+  $("cityPick").innerHTML=Object.entries(CITIES).map(([k,v])=>`<button data-c="${k}" aria-pressed="${k===city}"><span class="ic" aria-hidden="true">${IC[k]}</span><span><b>${v.name}</b><small>~${fmt(v.pop)} people, ${v.area.toLowerCase()}</small></span></button>`).join("");
+  $("monPick").innerHTML=Object.entries(MONS).map(([k,v])=>`<button data-m="${k}" aria-pressed="${k===mon}"><canvas width="48" height="48" data-s="${k}"></canvas>${v.name}</button>`).join("");
+  document.querySelectorAll("canvas[data-s]").forEach(c=>sprite(c.getContext("2d"),c.dataset.s,0,0,4));
+  $("cityData").innerHTML=`<dt>Population</dt><dd>~${fmt(c.pop)}</dd><dt>Terrain</dt><dd>${c.area}</dd><dt>Building toughness</dt><dd>${c.res.toFixed(2)}×</dd><dt>Evacuation routes</dt><dd>${Math.round(c.routes*100)}%</dd>`;
+  $("cityNote").textContent=c.note;
+  $("monData").innerHTML=`<dt>Type</dt><dd>${m.kind}</dd><dt>Size</dt><dd>${m.height}</dd><dt>Speed</dt><dd>${m.speed} blocks/min</dd><dt>Smash power</dt><dd>${m.power}</dd>`;
+  $("monNote").textContent=m.note;
+}
+document.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
+  if(b.dataset.c){city=b.dataset.c;ui();reset()} if(b.dataset.m){mon=b.dataset.m;ui();reset()}});
+$("go").onclick=()=>{ac(); if(t>=240||lostPct()>=.85)reset(); running=!running;$("go").textContent=running?"Pause":"Start"; if(running){last=performance.now();raf=requestAnimationFrame(loop)} ambient(running&&t>=0)};
+$("reset").onclick=reset;
+$("mute").onclick=()=>{muted=!muted;$("mute").textContent=muted?"🔇":"🔊";$("mute").setAttribute("aria-pressed",muted);$("mute").setAttribute("aria-label",muted?"Turn sound on":"Mute sound");if(muted)ambient(false);else if(running&&t>=0){ac();ambient(true)}};
+$("warn").oninput=()=>{$("warnVal").textContent=$("warn").value+" min";if(!running&&(t<=0))reset()};
+$("speed").oninput=()=>$("speedVal").textContent=$("speed").value+"×";
+addEventListener("resize",()=>grid&&draw());
+$("warnVal").textContent="20 min";$("speedVal").textContent="4×";
+ui();reset();
+</script>
+</body>
+</html>
