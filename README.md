@@ -5,6 +5,8 @@ Simulador visual de monstruos gigantes atacando ciudades reales de la Isla Sur d
 ## Cómo usarlo
 Abre `index.html` en el navegador. No necesita instalación ni servidor.
 
+https://crisai2026.github.io/monster-sim-nz/
+
 1. Elige una ciudad.
 2. Elige un monstruo: Brackmaw, Scree Titan, Ashwing o Abismo.
 3. Ajusta los minutos de alerta y la velocidad.
